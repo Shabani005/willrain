@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Rain Probability Predictor 🌦️</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f4f6f7;
+        margin: 30px;
+      }
+      #map {
+        height: 400px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+      }
+      .card {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        margin: auto;
+      }
+      button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #0069d9;
+      }
+      #result {
+        margin-top: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>Rain Probability Predictor 🌦️</h2>
+
+      <div id="map"></div>
+
+      <label for="date">Select Date:</label>
+      <input type="month" id="date" />
+
+      <br /><br />
+      <button id="predictBtn">Predict</button>
+
+      <div id="result"></div>
+    </div>
+
+    <script>
+      let latitude = null;
+      let longitude = null;
+
+      // Initialize Leaflet map
+      const map = L.map("map").setView([0, 0], 2);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 18,
+      }).addTo(map);
+
+      let marker;
+
+      map.on("click", function (e) {
+        latitude = e.latlng.lat.toFixed(4);
+        longitude = e.latlng.lng.toFixed(4);
+
+        if (marker) {
+          map.removeLayer(marker);
+        }
+        marker = L.marker([latitude, longitude]).addTo(map);
+      });
+
+      document
+        .getElementById("predictBtn")
+        .addEventListener("click", async () => {
+          if (!latitude || !longitude) {
+            alert("Please select a location on the map.");
+            return;
+          }
+
+          const dateVal = document.getElementById("date").value;
+          if (!dateVal) {
+            alert("Please select a date.");
+            return;
+          }
+
+          const [year, month] = dateVal.split("-");
+          const payload = {
+            latitude: latitude,
+            longitude: longitude,
+            year: year,
+            month: month,
+          };
+
+          document.getElementById("result").innerHTML =
+            "<p><em>Training models and predicting... please wait ⏳</em></p>";
+
+          const response = await fetch("/predict", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+
+          const result = await response.json();
+
+          document.getElementById(
+            "result"
+          ).innerHTML = `
+              <h3>Result</h3>
+              <p>Rain Probability: <b>${result.Rain_Probability}</b></p>
+              <p><b>${result.Message}</b></p>`;
+        });
+    </script>
+  </body>
+</html>
