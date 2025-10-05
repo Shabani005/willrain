@@ -1,14 +1,13 @@
 from flask import Flask, send_file, request, jsonify
 import pandas as pd
 import importlib
-import interface  # your script with full model logic
+import interface  
 
 app = Flask(__name__)
 
 
 @app.route('/')
 def home():
-    # Serve index.html directly from this directory
     return send_file("index.html")
 
 
@@ -20,11 +19,9 @@ def predict():
     year = int(data['year'])
     month = int(data['month'])
 
-    # ✅ Rerun your model pipeline from scratch on every click
     global interface
     importlib.reload(interface)
 
-    # Build input for temperature model
     sample = pd.DataFrame([{
         "Longitude": longitude,
         "Latitude": latitude,
@@ -32,11 +29,9 @@ def predict():
         "Month": month
     }])
 
-    # Use the trained models from interface
     pred_temp = interface.model.predict(sample)[0]
     rain_prob = interface.rain_model.predict_proba([[pred_temp]])[0, 1]
 
-    # Determine message for the user
     if rain_prob > 0.7:
         message = "It's very likely to rain. 🌧️"
     elif rain_prob > 0.5:
